@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Goal
 {
+    public static bool SafeDriving = false;
+
     public string name;
     public float value;
 
@@ -15,7 +17,14 @@ public class Goal
 
     public float GetDiscontentment(float newValue)
     {
-        return newValue * newValue;
+        if (SafeDriving == true)
+        {
+            return newValue * newValue;
+        }
+        else
+        {
+            return 1 / (newValue + 1);
+        }
     }
 }
 

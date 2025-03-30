@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class GoalSeeker : MonoBehaviour
 {
+    public UI uiManager;
+    public static string goalString = "";
+
+
     Goal[] mGoals;
     Action[] mActions;
     Action mChangeOverTime;
@@ -11,47 +15,47 @@ public class GoalSeeker : MonoBehaviour
     void Start()
     {
         mGoals = new Goal[3];
-        mGoals[0] = new Goal("Eat", 4);
-        mGoals[1] = new Goal("Sleep", 3);
-        mGoals[2] = new Goal("Bathroom", 3);
+        mGoals[0] = new Goal("Speed", 1);
+        mGoals[1] = new Goal("Fuel", 50);
+        mGoals[2] = new Goal("Distance", 0);
 
         mActions = new Action[6];
-        mActions[0] = new Action("eat some raw food");
-        mActions[0].targetGoals.Add(new Goal("Eat", -3f));
-        mActions[0].targetGoals.Add(new Goal("Sleep", +2f));
-        mActions[0].targetGoals.Add(new Goal("Bathroom", +1f));
+        mActions[0] = new Action("Green Light Driving");
+        mActions[0].targetGoals.Add(new Goal("Speed", +5f));
+        mActions[0].targetGoals.Add(new Goal("Fuel", -10f));
+        mActions[0].targetGoals.Add(new Goal("Distance", +10f));
 
-        mActions[1] = new Action("eat a snack");
-        mActions[1].targetGoals.Add(new Goal("Eat", -2f));
-        mActions[1].targetGoals.Add(new Goal("Sleep", -1f));
-        mActions[1].targetGoals.Add(new Goal("Bathroom", +1f));
+        mActions[1] = new Action("Red Light Stop");
+        mActions[1].targetGoals.Add(new Goal("Speed", 0f));
+        mActions[1].targetGoals.Add(new Goal("Fuel", -1f));
+        mActions[1].targetGoals.Add(new Goal("Distance", +0f));
 
-        mActions[2] = new Action("sleep in the bed");
-        mActions[2].targetGoals.Add(new Goal("Eat", +2f));
-        mActions[2].targetGoals.Add(new Goal("Sleep", -4f));
-        mActions[2].targetGoals.Add(new Goal("Bathroom", +2f));
+        mActions[2] = new Action("Yellow Light Slow Down");
+        mActions[2].targetGoals.Add(new Goal("Speed", -5f));
+        mActions[2].targetGoals.Add(new Goal("Fuel", -2f));
+        mActions[2].targetGoals.Add(new Goal("Distance", +1f));
 
-        mActions[3] = new Action("sleep on the sofa");
-        mActions[3].targetGoals.Add(new Goal("Eat", +1f));
-        mActions[3].targetGoals.Add(new Goal("Sleep", -2f));
-        mActions[3].targetGoals.Add(new Goal("Bathroom", +1f));
+        mActions[3] = new Action("Gas Station Refuel");
+        mActions[3].targetGoals.Add(new Goal("Speed", 0f));
+        mActions[3].targetGoals.Add(new Goal("Fuel", +50f));
+        mActions[3].targetGoals.Add(new Goal("Distance", +1f));
 
-        mActions[4] = new Action("drink a soda");
-        mActions[4].targetGoals.Add(new Goal("Eat", -1f));
-        mActions[4].targetGoals.Add(new Goal("Sleep", -2f));
-        mActions[4].targetGoals.Add(new Goal("Bathroom", +3f));
+        mActions[4] = new Action("Ope I forgot something, I better turn around");
+        mActions[4].targetGoals.Add(new Goal("Speed", +5f));
+        mActions[4].targetGoals.Add(new Goal("Fuel", -10f));
+        mActions[4].targetGoals.Add(new Goal("Distance", -10f));
 
-        mActions[5] = new Action("visit the bathroom");
-        mActions[5].targetGoals.Add(new Goal("Eat", 0f));
-        mActions[5].targetGoals.Add(new Goal("Sleep", 0f));
-        mActions[5].targetGoals.Add(new Goal("Bathroom", -4f));
+        mActions[5] = new Action("*Sirens Flashing* I better make a run for it");
+        mActions[5].targetGoals.Add(new Goal("Speed", +100f));
+        mActions[5].targetGoals.Add(new Goal("Fuel", -50f));
+        mActions[5].targetGoals.Add(new Goal("Distance", +50f));
 
         mChangeOverTime = new Action("tick");
-        mChangeOverTime.targetGoals.Add(new Goal("Eat", +4f));
-        mChangeOverTime.targetGoals.Add(new Goal("Sleep", +1f));
-        mChangeOverTime.targetGoals.Add(new Goal("Bathroom", +2f));
+        mChangeOverTime.targetGoals.Add(new Goal("Speed", +1f));
+        mChangeOverTime.targetGoals.Add(new Goal("Fuel", -2f));
+        mChangeOverTime.targetGoals.Add(new Goal("Distance", +2f));
 
-        Debug.Log("Starting clock. One hour will pass every " + TICK_LENGTH + " seconds.");
+        Debug.Log("Driving started Actions will be evaluated every: " + TICK_LENGTH + " seconds.");
         InvokeRepeating("Tick", 0f, TICK_LENGTH);
 
         Debug.Log("Hit E to do something.");
@@ -67,23 +71,31 @@ public class GoalSeeker : MonoBehaviour
         PrintGoals();
     }
 
-    void PrintGoals()
+    string PrintGoals()
     {
-        string goalString = "";
+        goalString = "";
         foreach (Goal goal in mGoals)
         {
             goalString += goal.name + ": " + goal.value + "; ";
         }
         goalString += "Discontentment: " + CurrentDiscontentment();
         Debug.Log(goalString);
+        return goalString;
     }
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            Goal.SafeDriving = !Goal.SafeDriving;
+            Debug.Log("Safe Driving Mode: " + (Goal.SafeDriving ? "ON" : "OFF"));
+            uiManager.UpdateToggleUI(Goal.SafeDriving);
+        }
+
         if (Input.GetKeyDown(KeyCode.E))
         {
             Action bestThingToDo = ChooseAction(mActions, mGoals);
-            Debug.Log("I think I will " + bestThingToDo.name);
+            Debug.Log(bestThingToDo.name);
 
             foreach (Goal goal in mGoals)
             {
@@ -92,7 +104,10 @@ public class GoalSeeker : MonoBehaviour
             }
 
             PrintGoals();
+            uiManager.UpdateActionUI(goalString, bestThingToDo.name);
         }
+
+        uiManager.UpdateStatsUI(goalString);
     }
 
     Action ChooseAction(Action[] actions, Goal[] goals)
